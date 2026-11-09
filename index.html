@@ -22,6 +22,10 @@ canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
 .mi:hover{color:#d67bba;text-decoration:underline}
 /* dialogue */
 #dlg{left:22px;right:22px;bottom:28px;height:74px;padding:8px 12px;font-size:12px;line-height:13px;border-image:url(assets/ui-dialogue.png) 8 fill / 8px stretch;cursor:pointer}
+#dport{position:absolute;left:10px;top:9px;width:48px;height:48px;border:3px solid #8e563b;box-shadow:0 0 0 1px #3a2a1a,inset 0 0 0 1px #d8a066;background-color:#e7c9a0;background-repeat:no-repeat;image-rendering:pixelated;box-sizing:content-box}
+#dport.b{background-image:url(assets/portrait-b.png);background-size:48px auto;background-position:center top}
+#dport.p{background-image:url(assets/portrait-peanut.png);background-size:48px 44px;background-position:center}
+#dtext{margin-left:58px}
 #dname{position:absolute;top:-14px;left:10px;background:#d67bba;border:2px solid #754289;color:#2b1d12;padding:1px 8px;font-size:11px}
 #dicon{position:absolute;right:8px;top:-16px;image-rendering:pixelated}
 #dnext{position:absolute;right:12px;bottom:6px;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #8e563b;animation:bl .8s steps(2) infinite}
@@ -130,7 +134,7 @@ html,body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-to
   <canvas id="c" width="480" height="270"></canvas>
   <canvas id="tc"></canvas>
   <div id="ui">
-    <div id="dlg" class="box hidden"><img id="dicon" src="assets/dialogue-icon.png" alt=""><div id="dname"></div><div id="dtext"></div><div id="dnext"></div></div>
+    <div id="dlg" class="box hidden"><img id="dicon" src="assets/dialogue-icon.png" alt=""><div id="dport" class="b"></div><div id="dname"></div><div id="dtext"></div><div id="dnext"></div></div>
     <div id="card" class="box hidden"></div>
     <div id="journal" class="hidden">
       <img id="jimg" src="assets/journal-new.png" alt="">
@@ -273,7 +277,7 @@ const MANIFEST={
  'char-idle':1,'char-walk':2,'cat-body':1,'cat-tail':3,'dialogue-icon':1,
  'item-page':1,'ui-page-icon':1,
  'email-icon':1,'linkedin-icon':1,'behance-icon':1,'CV-icon':1,'website-icon':1,
- 'prop-about-signpost':1,'prop-about-signpost-large':1,'prop-stall':1,'prop-market-noticeboard':1};
+ 'prop-work-a':1,'prop-work-b':1,'prop-work-c':1,'prop-work-d':1,'prop-about-signpost':1,'prop-about-signpost-large':1,'prop-stall':1,'prop-market-noticeboard':1};
 ['hub','skills','gallery','studio','trail-finale'].forEach(s=>['far','mid','main'].forEach(l=>{MANIFEST['bg-'+s+'-'+l]=1;}));
 const IMG={},FR={};
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
@@ -390,14 +394,15 @@ function showTop(){}
 /* ---------- DIALOGUE + INTRO CUTSCENE ---------- */
 let dlg=null;
 function chunk(text,max){if(text.length<=max)return[text];const ss=text.match(/[^.!?]+[.!?]*\s*/g)||[text],res=[];let cur='';for(const s of ss){if((cur+s).length>max&&cur){res.push(cur.trim());cur=s;}else cur+=s;}if(cur.trim())res.push(cur.trim());return res;}
+function setPort(w){const e=$('dport');if(e)e.className=(w==='Peanut')?'p':'b';}
 function startDialogue(lines,onEnd){
   const out=[];lines.forEach(l=>chunk(l.t,300).forEach(c=>out.push({who:l.who,t:c})));
   dlg={lines:out,i:0,acc:0,n:0,onEnd};state='dialog';showTop(false);
-  $('dlg').classList.remove('hidden');$('dname').textContent=fx(out[0].who);$('dnext').classList.add('hidden');$('dtext').textContent='';}
+  $('dlg').classList.remove('hidden');$('dname').textContent=fx(out[0].who);setPort(out[0].who);$('dnext').classList.add('hidden');$('dtext').textContent='';}
 function advance(){
   if(!dlg)return;const l=dlg.lines[dlg.i];
   if(dlg.n<l.t.length){dlg.acc=dlg.n=l.t.length;return;}
-  if(dlg.i<dlg.lines.length-1){dlg.i++;dlg.acc=0;dlg.n=0;$('dname').textContent=fx(dlg.lines[dlg.i].who);$('dnext').classList.add('hidden');sfx.select();}
+  if(dlg.i<dlg.lines.length-1){dlg.i++;dlg.acc=0;dlg.n=0;$('dname').textContent=fx(dlg.lines[dlg.i].who);setPort(dlg.lines[dlg.i].who);$('dnext').classList.add('hidden');sfx.select();}
   else{$('dlg').classList.add('hidden');const cb=dlg.onEnd;dlg=null;state='play';if(!introMode)showTop(true);if(cb)cb();}}
 function updateDialogue(dt){
   if(!dlg)return;const l=dlg.lines[dlg.i];
@@ -789,8 +794,16 @@ function drawWorld(){
     ctx.fillStyle='#fbe9c8';ctx.fillRect(Math.round(bx),Math.round(by),Math.round(bw),bh);ctx.strokeStyle='#3a2a1a';ctx.strokeRect(Math.round(bx)+.5,Math.round(by)+.5,Math.round(bw)-1,bh-1);
     ctx.fillRect(Math.round(C.x-cam)-2,Math.round(by+bh),4,4);
     lines.forEach((l,i)=>TXT(l,Math.round(bx)+5,Math.round(by)+10+i*10,9,'#3a2a1a','left'));}
+  if(!zoom&&state!=='cine')drawPetals();
   drawHUD();
 }
+/* drifting petals (deterministic from the clock, so they need no state) */
+function drawPetals(){
+  for(let i=0;i<26;i++){
+    const sp=7+(i*37%9),x=((i*83.7-T*sp)%(W+30)+(W+30))%(W+30)-12,
+      y=((i*47.3+T*(5+i%4*2))%(GROUND-6))+Math.sin(T*1.2+i)*6,c=['#d67bba','#ec975e','#fbe9c8','#d8a066'][i%4],
+      f=Math.floor(T*3+i)%2;
+    ctx.globalAlpha=.85;ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),f?3:2,f?2:3);ctx.globalAlpha=1;}}
 function contextHint0(){
   if(state==='ready')return null;
   if(state==='dialog')return introMode?'Press E, Space or click the box to read on':'Press E, Space or click the box to continue';
