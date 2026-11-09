@@ -568,7 +568,7 @@ function drawTitle(){
     rects.push({x:Math.round(x+vx),y:Math.round(visTop),w:Math.round(vw),h:Math.round(vh)});
     TXT(it.txt,W/2,visTop+vh/2+BTN_TEXT*.33+(down?1:0),BTN_TEXT,'#2b1d12','center',ba);});
   ctx.restore();TITLE_RECTS=rects;
-  if(ba>.9)TXT((TOUCH?'Tap a button to begin':'Click a button, or use the arrow keys and Enter'),W/2,H-8,9,'rgba(43,29,18,.85)','center',undefined,1);
+  if(ba>.9)TXT((TOUCH?'Tap a button to begin':'Click a button, or use the arrow keys and Enter'),W/2,H-8,9,'rgba(43,29,18,.85)','center',undefined,0);
 }
 function drawLogo(p){
   const lg=IMG['title-logo'];if(!lg){phX(W/2,LOGO_VIS.y+LOGO_VIS.h,LOGO_VIS.w,LOGO_VIS.h,'title-logo');return;}

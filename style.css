@@ -121,3 +121,5 @@ html,body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-to
 #pn img{height:40px;image-rendering:pixelated}
 #pn button{margin-top:10px;float:right;background:#d67bba;border:2px solid #754289;color:#2b1d12;font:inherit;font-size:14px;padding:4px 16px;cursor:pointer}
 @media (max-height:420px){#pn{font-size:12px;padding:8px 12px}#pn img{height:30px}#tpad .tb{width:56px;height:56px}#tpR{left:calc(max(14px,env(safe-area-inset-left)) + 68px)}#tpE{width:62px;height:62px}}
+
+#toast,#toast *{font-family:'Pixelta','InterB',sans-serif!important;font-weight:normal!important}
