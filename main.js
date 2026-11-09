@@ -127,7 +127,7 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');ctx.imageSmoothing
 const $=id=>document.getElementById(id);
 const tcv=$('tc'),tx=tcv.getContext('2d');let KX=1,KY=1,OFFY=0,TXON=true;
 const fx=s=>String(s).replace(/'/g,'\u2019');
-function TXT(str,x,y,size,color,align,alpha,body){if(!TXON)return;tx.save();tx.globalAlpha=alpha===undefined?1:alpha;tx.font=(body?Math.round(size*.82*2)/2:size)+'px '+(body?FB:FP);tx.textAlign=align||'left';tx.fillStyle=color;tx.fillText(fx(str),x,y+OFFY);tx.restore();}
+function TXT(str,x,y,size,color,align,alpha,body){if(!TXON)return;tx.save();tx.globalAlpha=alpha===undefined?1:alpha;tx.font=(body?Math.round(size*.68*2)/2:size)+'px '+(body?FB:FP);tx.textAlign=align||'left';tx.fillStyle=color;tx.fillText(fx(str),x,y+OFFY);tx.restore();}
 function loadImg(src){return new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});}
 async function preload(){
   const jobs=[];
@@ -632,7 +632,7 @@ function drawWorld(){
   OFFY=0;
   if(state==='cine'&&camY>0)return;
   if(bubble&&state!=='dialog'&&!zoom){
-    ctx.font='8.5px '+FB;const lines=wrap(bubble.t,130),bw=Math.max(...lines.map(l=>ctx.measureText(l).width))+10,bh=lines.length*10+6;
+    ctx.font='7.5px '+FB;const lines=wrap(bubble.t,130),bw=Math.max(...lines.map(l=>ctx.measureText(l).width))+10,bh=lines.length*10+6;
     const bx=clamp(C.x-cam-bw/2,4,W-bw-4),by=GROUND-74-bh;
     ctx.fillStyle='#fbe9c8';ctx.fillRect(Math.round(bx),Math.round(by),Math.round(bw),bh);ctx.strokeStyle='#3a2a1a';ctx.strokeRect(Math.round(bx)+.5,Math.round(by)+.5,Math.round(bw)-1,bh-1);
     ctx.fillRect(Math.round(C.x-cam)-2,Math.round(by+bh),4,4);
