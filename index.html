@@ -149,7 +149,7 @@ html,body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-to
 <div id="pn"><div class="who"><img src="assets/cat-body.png" alt="">Peanut</div><div>Mrrp. Hi! This website works best on a laptop or desktop with a keyboard. You can still explore on this device in landscape with the on-screen buttons. Have fun!</div><button id="pnok">OK</button></div>
 <script>
 (()=>{'use strict';
-const TOUCH=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window)||navigator.maxTouchPoints>0;
+const TOUCH=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches&&!matchMedia('(any-pointer:fine)').matches);
 /* =====================================================================
    B's JOURNAL - draft 5 - Belinda Ortlepp
    Anything not drawn yet shows as a square with an X. Put PNGs in the
@@ -864,11 +864,12 @@ if(TOUCH){
   tap('tpE',()=>onKey(state==='cine'?'Enter':'KeyE'));
   tap('tpM',()=>onKey('Escape'));
   ['tpad','rot','pn'].forEach(id=>$(id).addEventListener('contextmenu',e=>e.preventDefault()));
+  let kbMode=false;addEventListener('keydown',()=>{kbMode=true;});addEventListener('pointermove',e=>{if(e.pointerType==='mouse')kbMode=true;},{passive:true});
   setInterval(()=>{
-    const mv=state==='play'||state==='ready',act=mv||state==='dialog'||state==='cine';
+    const mv=!kbMode&&(state==='play'||state==='ready'),act=!kbMode&&(mv||state==='dialog'||state==='cine');
     $('tpL').style.display=$('tpR').style.display=mv?'flex':'none';
     $('tpE').style.display=act?'flex':'none';
-    $('tpM').style.display=state==='play'?'flex':'none';},120);
+    $('tpM').style.display=!kbMode&&state==='play'?'flex':'none';},120);
   cv.addEventListener('touchstart',e=>{if(state==='title'){e.preventDefault();ac();if(!introDone()){titleStart=T-INTRO_END-.1;}}},{passive:false});
   cv.addEventListener('touchend',e=>{if(state!=='title'||!introDone()||!e.changedTouches[0])return;e.preventDefault();
     const m=mpos(e.changedTouches[0]);for(const it of titleItems()){if(it.rect&&inR(m,it.rect)){it.go();break;}}},{passive:false});
