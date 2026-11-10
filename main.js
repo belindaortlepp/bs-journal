@@ -1,14 +1,5 @@
 (()=>{'use strict';
-const TOUCH=(()=>{const q=location.search;if(/[?&]desktop=1/.test(q))return false;if(/[?&]touch=1/.test(q))return true;
-const ua=navigator.userAgent||'',mm=s=>!!(window.matchMedia&&matchMedia(s).matches),sc=Math.min(screen.width||9999,screen.height||9999),mt=navigator.maxTouchPoints||0;
-let forced=false;try{forced=sessionStorage.getItem('bjtouch')==='1';}catch(e){}
-const mob=/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Tablet/i.test(ua)||!!(navigator.userAgentData&&navigator.userAgentData.mobile)||(/Macintosh/.test(ua)&&mt>1);
-return !!(forced||mob||('ontouchstart' in window&&sc<=1100)||(mt>0&&(mm('(pointer:coarse)')||mm('(hover:none)')||mm('(any-pointer:coarse)')&&!mm('(hover:hover) and (pointer:fine)')||sc<=1100||innerWidth<=1000)));})();
-let _mouseSeen=false;addEventListener('pointermove',e=>{if(e.pointerType==='mouse')_mouseSeen=true;},{passive:true});
-if(!TOUCH){const f=e=>{if(e.pointerType==='touch'&&!_mouseSeen){removeEventListener('pointerdown',f,true);try{sessionStorage.setItem('bjtouch','1');}catch(x){}location.reload();}};addEventListener('pointerdown',f,true);
-addEventListener('touchstart',function g(){removeEventListener('touchstart',g);if(!_mouseSeen){try{sessionStorage.setItem('bjtouch','1');}catch(x){}location.reload();}},{passive:true});}
-if(/[?&]debug=1/.test(location.search)){addEventListener('load',()=>{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;z-index:999;background:#000c;color:#0f0;font:11px monospace;padding:4px;white-space:pre';d.textContent='TOUCH='+TOUCH+' mt='+navigator.maxTouchPoints+' screen='+screen.width+'x'+screen.height+' win='+innerWidth+'x'+innerHeight+' coarse='+matchMedia('(pointer:coarse)').matches+' hover='+matchMedia('(hover:hover)').matches+'\n'+navigator.userAgent;document.body.appendChild(d);});}
-if(TOUCH)document.documentElement.classList.add('touch');
+let TOUCH=false,lastPT='mouse';addEventListener('pointerdown',ev=>{lastPT=ev.pointerType||'mouse';},true);
 /* =====================================================================
    B's JOURNAL - draft 5 - Belinda Ortlepp
    Anything not drawn yet shows as a square with an X. Put PNGs in the
@@ -494,7 +485,7 @@ cv.addEventListener('mousemove',e=>{
   if(state==='title'&&introDone()){titleHover=-1;titleItems().forEach((it,i)=>{if(inR(m,it.rect)){titleHover=i;titleSel=i;titleKeys=true;}});}
   cv.style.cursor=(state==='title'&&titleHover>=0)||(state==='contact'&&CONTACT_RECTS.some(r=>inR(m,r)))||(state==='play'&&LEGEND_RECTS.some(r=>inR(m,r)))?'pointer':'default';});
 cv.addEventListener('mousedown',e=>{ac();if(state==='title'){if(!introDone()){titleStart=T-INTRO_END-.1;return;}if(titleHover>=0)titleDown=titleHover;}});
-cv.addEventListener('mouseup',e=>{if(state==='title'){if(titleDown>=0&&titleDown===titleHover)titleItems()[titleDown].go();titleDown=-1;}});
+cv.addEventListener('mouseup',e=>{if(state==='title'){if(titleDown>=0&&titleDown===titleHover){if(lastPT==='touch'&&!TOUCH)enableTouch();titleItems()[titleDown].go();}titleDown=-1;}});
 cv.addEventListener('click',e=>{
   const m=mpos(e);
   if(state==='play'){for(const r of LEGEND_RECTS){if(inR(m,r)){sfx.select();if(r.act==='journal')openJournal();else if(r.act==='map')openMap();else if(r.act==='menu')openMenu();else if(r.act==='hint')hint();return;}}
@@ -669,7 +660,7 @@ function contextHint0(){
   return 'Walk with A and D or the arrow keys. Look for floating pages and things you can open';}
 const tk=s=>{if(!TOUCH||!s)return s;return s.replace('Press E, Space or click the box to read on','Tap the box to read on').replace('Press E, Space or click the box to continue','Tap the box to continue').replace('Press E or Esc to close','Tap CLOSE to leave').replace('Press Enter or click to skip to the contact page','Tap to skip to the contact page').replace('Press E to','Tap the E button to').replace('Walk with A and D or the arrow keys.','Walk with the arrow buttons.');};
 const contextHint=()=>tk(contextHint0());
-const LEGEND=TOUCH?[['Ask Peanut','hint'],['Journal','journal'],['Map','map'],['Menu','menu']]:[['A / D or arrows: walk',null],['E: open',null],['C: ask Peanut','hint'],['J: journal','journal'],['M: map','map'],['Esc: menu','menu']];
+let LEGEND=TOUCH?[['Ask Peanut','hint'],['Journal','journal'],['Map','map'],['Menu','menu']]:[['A / D or arrows: walk',null],['E: open',null],['C: ask Peanut','hint'],['J: journal','journal'],['M: map','map'],['Esc: menu','menu']];
 let LEGEND_RECTS=[];
 function drawLegend(){
   ctx.font='8px '+FP;const gap=16,ws=LEGEND.map(l=>ctx.measureText(fx(l[0])).width),tot=ws.reduce((a,b)=>a+b,0)+gap*(LEGEND.length-1);let x=(W-tot)/2;LEGEND_RECTS=[];
@@ -727,8 +718,12 @@ function draw(){
 }
 
 
-/* ---------- TOUCH CONTROLS ---------- */
-if(TOUCH){
+/* ---------- TOUCH CONTROLS (switched on only when a title button is tapped with a finger) ---------- */
+let _touchInit=false;
+function enableTouch(){
+  if(TOUCH)return;TOUCH=true;document.documentElement.classList.add('touch');
+  LEGEND=[['Ask Peanut','hint'],['Journal','journal'],['Map','map'],['Menu','menu']];
+  if(_touchInit)return;_touchInit=true;
   $('maphint').textContent='Tap a place to travel there. X closes the map.';
   const held=(id,code)=>{const b=$(id);
     const on=e=>{e.preventDefault();ac();try{b.setPointerCapture(e.pointerId);}catch(er){}keys[code]=true;b.classList.add('on');onKey(code);};
@@ -738,7 +733,7 @@ if(TOUCH){
   const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();ac();fn();});
   tap('tpE',()=>onKey(state==='cine'?'Enter':'KeyE'));
   tap('tpM',()=>onKey('Escape'));
-  ['tpad','rot','pn'].forEach(id=>$(id).addEventListener('contextmenu',e=>e.preventDefault()));
+  ['tpad','pn'].forEach(id=>$(id).addEventListener('contextmenu',e=>e.preventDefault()));
   let kbMode=false;addEventListener('keydown',()=>{kbMode=true;});addEventListener('pointermove',e=>{if(e.pointerType==='mouse')kbMode=true;},{passive:true});
   setInterval(()=>{
     const mv=!kbMode&&(state==='play'||state==='ready'),act=!kbMode&&(mv||state==='dialog'||state==='cine');
@@ -748,16 +743,17 @@ if(TOUCH){
   cv.addEventListener('touchstart',e=>{if(state==='title'){e.preventDefault();ac();if(!introDone()){titleStart=T-INTRO_END-.1;}}},{passive:false});
   cv.addEventListener('touchend',e=>{if(state!=='title'||!introDone()||!e.changedTouches[0])return;e.preventDefault();
     const m=mpos(e.changedTouches[0]);for(const it of titleItems()){if(it.rect&&inR(m,it.rect)){it.go();break;}}},{passive:false});
+  showPhoneNotice();
 }
-(()=>{let seen=false;try{seen=sessionStorage.getItem('bjpn')==='1';}catch(e){}
-  if(seen||!(TOUCH||innerWidth<720))return;
+function showPhoneNotice(){let seen=false;try{seen=sessionStorage.getItem('bjpn')==='1';}catch(e){}
+  if(seen)return;
   const pn=$('pn');setTimeout(()=>{pn.style.display='block';},700);
   {const de=document.documentElement,fs=de.requestFullscreen||de.webkitRequestFullscreen,box=$('pnfs'),standalone=(navigator.standalone===true)||matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches;
    if(standalone){box.style.display='none';}
    else if(fs&&TOUCH){box.innerHTML='<button id="pnfull">Go fullscreen</button><span>Hides the browser bars so the game is bigger.</span>';
      $('pnfull').addEventListener('click',()=>{try{const p=fs.call(de);if(p&&p.catch)p.catch(()=>{});}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}pn.style.display='none';});}
    else if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)){box.innerHTML='<span>For a bigger view: tap Share, then Add to Home Screen, and open B’s Journal from your home screen.</span>';}}
-  $('pnok').addEventListener('click',()=>{pn.style.display='none';try{sessionStorage.setItem('bjpn','1');}catch(e){}lastInput=Date.now();});})();
+  $('pnok').addEventListener('click',()=>{pn.style.display='none';try{sessionStorage.setItem('bjpn','1');}catch(e){}lastInput=Date.now();});}
 
 /* ---------- LOOP ---------- */
 function resize(){
