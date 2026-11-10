@@ -733,7 +733,7 @@ function enableTouch(){
   const tap=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();ac();fn();});
   tap('tpE',()=>onKey(state==='cine'?'Enter':'KeyE'));
   tap('tpM',()=>onKey('Escape'));
-  ['tpad','pn'].forEach(id=>$(id).addEventListener('contextmenu',e=>e.preventDefault()));
+  ['tpad','rot','pn'].forEach(id=>$(id).addEventListener('contextmenu',e=>e.preventDefault()));
   let kbMode=false;addEventListener('keydown',()=>{kbMode=true;});addEventListener('pointermove',e=>{if(e.pointerType==='mouse')kbMode=true;},{passive:true});
   setInterval(()=>{
     const mv=!kbMode&&(state==='play'||state==='ready'),act=!kbMode&&(mv||state==='dialog'||state==='cine');
