@@ -623,9 +623,12 @@ function drawWorld(){
     const seq=[pw[0],pi[0],pw[1],pi[0]];
     dr([P.st==='walk'?seq[Math.floor(T*7)%4]:pi[0]],0,P.x-cam,P.dir);}
   else{phX(C.x-cam,GROUND,16,16,'Peanut');phX(P.x-cam,GROUND,24,32,'B');}
-  if(state==='play'){const p=nearProp();if(p){const px=Math.round(p.x-cam),py=Math.round(GROUND-p.ph[1]-16+Math.sin(T*5)*2);
-    ctx.fillStyle='#2b1d12';ctx.beginPath();ctx.moveTo(px-6,py-5);ctx.lineTo(px+6,py-5);ctx.lineTo(px,py+5);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#d67bba';ctx.beginPath();ctx.moveTo(px-4,py-3);ctx.lineTo(px+4,py-3);ctx.lineTo(px,py+3);ctx.closePath();ctx.fill();}}
+  if(state==='play'){const p=nearProp();if(p){const px=Math.round(p.x-cam),py=Math.round(GROUND-p.ph[1]-30+Math.sin(T*5)*2),kw=15,kh=15,x0=px-7,y0=py-kh;
+    // pixel key cap with "E": shadow, face, tail pointing at the object
+    ctx.fillStyle='#8e563b';ctx.fillRect(x0-1,y0+1,kw+2,kh);ctx.fillRect(px-3,y0+kh+1,7,2);ctx.fillRect(px-1,y0+kh+3,3,2);
+    ctx.fillStyle='#fbe9c8';ctx.fillRect(x0,y0,kw,kh-1);ctx.fillRect(px-2,y0+kh-1,5,2);ctx.fillRect(px,y0+kh+1,1,2);
+    ctx.fillStyle='#8e563b';ctx.fillRect(x0,y0,kw,1);ctx.fillRect(x0,y0,1,kh-1);ctx.fillRect(x0+kw-1,y0,1,kh-1);
+    TXT(TOUCH?'E':'E',px,y0+12,13,'#754289','center',undefined,0);}}
   ctx.restore();TXON=true;
   const sk=IMG['finale-sky'];
   if(camY>0){if(sk)ctx.drawImage(sk,0,Math.round(camY-H));else{ctx.fillStyle='#05052a';ctx.fillRect(0,0,W,Math.round(camY));}}
@@ -654,7 +657,7 @@ function contextHint0(){
   if(state==='cine')return 'Press Enter or click to skip to the contact page';
   if(state==='wait')return '';
   const p=nearProp();
-  if(p)return p.kind==='save'?'Press E to rest by the fire and finish the trip':p.kind==='card'?'Press E to look closer at the '+p.label.toLowerCase():'Press E to read the '+p.label.toLowerCase();
+  if(p)return p.kind==='save'?'Press E to rest by the fire and finish the trip':p.kind==='card'?'Press E to look closer at '+(/^the /i.test(p.label)?'':'the ')+p.label.toLowerCase():'Press E to read '+(/^the /i.test(p.label)?'':'the ')+p.label.toLowerCase();
   const pg=(Z.pages||[]).find(q=>!save.pages.includes(q.id)&&Math.abs(q.x-P.x)<130);
   if(pg)return 'A journal page is close. Walk into it to collect it';
   return 'Walk with A and D or the arrow keys. Look for floating pages and things you can open';}
