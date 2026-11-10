@@ -1,5 +1,14 @@
 (()=>{'use strict';
-const TOUCH=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches&&!matchMedia('(any-pointer:fine)').matches);
+const TOUCH=(()=>{const q=location.search;if(/[?&]desktop=1/.test(q))return false;if(/[?&]touch=1/.test(q))return true;
+const ua=navigator.userAgent||'',mm=s=>!!(window.matchMedia&&matchMedia(s).matches),sc=Math.min(screen.width||9999,screen.height||9999),mt=navigator.maxTouchPoints||0;
+let forced=false;try{forced=sessionStorage.getItem('bjtouch')==='1';}catch(e){}
+const mob=/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Tablet/i.test(ua)||!!(navigator.userAgentData&&navigator.userAgentData.mobile)||(/Macintosh/.test(ua)&&mt>1);
+return !!(forced||mob||('ontouchstart' in window&&sc<=1100)||(mt>0&&(mm('(pointer:coarse)')||mm('(hover:none)')||mm('(any-pointer:coarse)')&&!mm('(hover:hover) and (pointer:fine)')||sc<=1100||innerWidth<=1000)));})();
+let _mouseSeen=false;addEventListener('pointermove',e=>{if(e.pointerType==='mouse')_mouseSeen=true;},{passive:true});
+if(!TOUCH){const f=e=>{if(e.pointerType==='touch'&&!_mouseSeen){removeEventListener('pointerdown',f,true);try{sessionStorage.setItem('bjtouch','1');}catch(x){}location.reload();}};addEventListener('pointerdown',f,true);
+addEventListener('touchstart',function g(){removeEventListener('touchstart',g);if(!_mouseSeen){try{sessionStorage.setItem('bjtouch','1');}catch(x){}location.reload();}},{passive:true});}
+if(/[?&]debug=1/.test(location.search)){addEventListener('load',()=>{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;z-index:999;background:#000c;color:#0f0;font:11px monospace;padding:4px;white-space:pre';d.textContent='TOUCH='+TOUCH+' mt='+navigator.maxTouchPoints+' screen='+screen.width+'x'+screen.height+' win='+innerWidth+'x'+innerHeight+' coarse='+matchMedia('(pointer:coarse)').matches+' hover='+matchMedia('(hover:hover)').matches+'\n'+navigator.userAgent;document.body.appendChild(d);});}
+if(TOUCH)document.documentElement.classList.add('touch');
 /* =====================================================================
    B's JOURNAL - draft 5 - Belinda Ortlepp
    Anything not drawn yet shows as a square with an X. Put PNGs in the
@@ -743,6 +752,11 @@ if(TOUCH){
 (()=>{let seen=false;try{seen=sessionStorage.getItem('bjpn')==='1';}catch(e){}
   if(seen||!(TOUCH||innerWidth<720))return;
   const pn=$('pn');setTimeout(()=>{pn.style.display='block';},700);
+  {const de=document.documentElement,fs=de.requestFullscreen||de.webkitRequestFullscreen,box=$('pnfs'),standalone=(navigator.standalone===true)||matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches;
+   if(standalone){box.style.display='none';}
+   else if(fs&&TOUCH){box.innerHTML='<button id="pnfull">Go fullscreen</button><span>Hides the browser bars so the game is bigger.</span>';
+     $('pnfull').addEventListener('click',()=>{try{const p=fs.call(de);if(p&&p.catch)p.catch(()=>{});}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{});}catch(e){}pn.style.display='none';});}
+   else if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)){box.innerHTML='<span>For a bigger view: tap Share, then Add to Home Screen, and open B’s Journal from your home screen.</span>';}}
   $('pnok').addEventListener('click',()=>{pn.style.display='none';try{sessionStorage.setItem('bjpn','1');}catch(e){}lastInput=Date.now();});})();
 
 /* ---------- LOOP ---------- */
@@ -752,7 +766,7 @@ function resize(){
   cv.style.width=cw+'px';cv.style.height=ch+'px';
   tcv.style.width=cw+'px';tcv.style.height=ch+'px';tcv.width=Math.max(1,Math.round(cw*dpr));tcv.height=Math.max(1,Math.round(ch*dpr));KX=tcv.width/W;KY=tcv.height/H;
   $('ui').style.transform='scale('+(cw/W)+')';}
-addEventListener('resize',resize);resize();
+addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,250));if(window.visualViewport)visualViewport.addEventListener('resize',resize);document.addEventListener('fullscreenchange',()=>setTimeout(resize,150));resize();if('serviceWorker' in navigator)addEventListener('load',()=>{try{navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}});
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(frame);}
 preload().then(()=>{try{return Promise.all([document.fonts.load('10px Pixelta'),document.fonts.load('10px InterB')]);}catch(e){}}).then(()=>{titleStart=T;requestAnimationFrame(frame);});

@@ -125,3 +125,9 @@ html,body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-to
 #toast,#toast *{font-family:'Pixelta','InterB',sans-serif!important;font-weight:normal!important}
 
 .meta b,.it b,.cskills .sk{font-size:1.2em}
+
+@media (orientation:portrait){html.touch #rot{display:flex}}
+
+#pnfs{margin-top:8px;font-size:.85em;line-height:1.3;color:#6b4a2c}#pnfs span{display:block;margin-top:4px}
+#pn #pnfull{float:none;margin:0;background:#754289;color:#fbe9c8;border-color:#2b1d12}
+html,body{height:100%;overscroll-behavior:none}
