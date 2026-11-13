@@ -235,12 +235,12 @@ function toTitle(){state='title';hideAll();titleSel=0;titleKeys=false;titleStart
 function showTop(){}
 
 /* ---------- DIALOGUE + INTRO CUTSCENE ---------- */
-let dlg=null;
+let dlg=null,readyT=0;
 function chunk(text,max){if(text.length<=max)return[text];const ss=text.match(/[^.!?]+[.!?]*\s*/g)||[text],res=[];let cur='';for(const s of ss){if((cur+s).length>max&&cur){res.push(cur.trim());cur=s;}else cur+=s;}if(cur.trim())res.push(cur.trim());return res;}
 function setPort(w){const e=$('dport');if(e)e.className=(w==='Peanut')?'p':'b';}
 function startDialogue(lines,onEnd){
   const out=[];lines.forEach(l=>chunk(l.t,300).forEach(c=>out.push({who:l.who,t:c})));
-  dlg={lines:out,i:0,acc:0,n:0,onEnd};state='dialog';showTop(false);
+  dlg={lines:out,i:0,acc:0,n:0,onEnd,t0:Date.now()};state='dialog';showTop(false);
   $('dlg').classList.remove('hidden');$('dname').textContent=fx(out[0].who);setPort(out[0].who);$('dnext').classList.add('hidden');$('dtext').textContent='';}
 function advance(){
   if(!dlg)return;const l=dlg.lines[dlg.i];
@@ -254,7 +254,7 @@ function updateDialogue(dt){
 /* the intro cannot be skipped: it can only be read through, line by line */
 function startIntro(){
   introMode=true;state='play';
-  setTimeout(()=>{startDialogue(INTRO_LINES,()=>{save.intro=true;persist();state='ready';});},900);
+  setTimeout(()=>{startDialogue(INTRO_LINES,()=>{save.intro=true;persist();state='ready';readyT=Date.now();});},900);
   state='wait';}
 
 /* ---------- INFO CARDS + STALL ZOOM ---------- */
@@ -285,7 +285,15 @@ function beginZoom(p){
   showTop(false);}
 function closeCard(){const hb=$('hero');if(hb&&hb.classList&&hb.classList.contains('big')){hb.classList.remove('big');return;}$('card').classList.add('hidden');if(zoom){zoom.dir=-1;zoom.t=Math.min(zoom.t,1);state='zoom';}else state='play';}
 $('card').addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#hero')){const hb=$('hero');if(hb&&hb.classList)hb.classList.toggle('big');return;}const t=e.target.closest('[data-close],[data-url],[data-journal]');if(!t)return;sfx.select();if(t.dataset.journal!==undefined)cardToJournal(+t.dataset.journal);else if(t.dataset.close)closeCard();else window.open(t.dataset.url,'_blank','noopener');});
-$('dlg').addEventListener('click',advance);
+/* DRAFT 11: a click or tap ANYWHERE on the page advances dialogue, closes the how-to-play screen
+   and starts the game from the MOVE TO START prompt. (capture phase, so nothing underneath can swallow it) */
+document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('#tpad,#pn,#rot'))return;
+  const now=Date.now();
+  if(state==='dialog'&&dlg&&now-dlg.t0>300){e.stopPropagation();e.preventDefault();ac();advance();return;}
+  if(state==='help'&&now-helpT>300){e.stopPropagation();e.preventDefault();$('help').classList.add('hidden');state='play';showTop(true);return;}
+  if(state==='ready'&&now-readyT>300){e.stopPropagation();e.preventDefault();ac();introMode=false;state='play';showTop(true);return;}
+},true);
 
 /* ---------- ACTIONS ---------- */
 function nearProp(){for(const p of Z.props){if(Math.abs(P.x-p.x)<=p.ph[0]/2+16)return p;}return null;}
@@ -412,8 +420,9 @@ $('menu').addEventListener('click',e=>{
   else if(m==='save'){persist();toast('Game saved');}
   else if(m==='title'){persist();toTitle();}
   else if(m==='reset'){if(confirm('Delete your saved progress?')){try{localStorage.removeItem(KEY);}catch(er){}save=newSave();hasSave=false;toTitle();}}});
+let helpT=0;
 function openHelp(){
-  state='help';
+  state='help';helpT=Date.now();
   $('help').innerHTML='<h2>How to play</h2>'+
    '<p><b>Walk:</b> press A and D, or the left and right arrow keys.</p>'+
    '<p><b>Open things:</b> stand next to a stall, sign or board and press E.</p>'+
@@ -422,7 +431,7 @@ function openHelp(){
    '<p><b>Journal:</b> press J, or click J: journal in the bar at the bottom. Click the tabs on the left to switch section. Everything you find is saved there.</p>'+
    '<p><b>Travel:</b> press M, or click M: map in the bar at the bottom, then click a place to jump straight to it.</p>'+
    '<p><b>Pause:</b> press Esc, or click Esc: menu at the bottom. Your progress saves by itself.</p>'+
-   '<span class="tl" data-close="1">GOT IT</span>';
+   '<span class="tl" data-close="1">GOT IT (or click anywhere)</span>';
   $('help').classList.remove('hidden');}
 $('help').addEventListener('click',e=>{if(e.target.closest('[data-close]')){$('help').classList.add('hidden');state='play';showTop(true);}});
 
@@ -652,7 +661,7 @@ function drawPetals(){
     ctx.globalAlpha=.85;ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),f?3:2,f?2:3);ctx.globalAlpha=1;}}
 function contextHint0(){
   if(state==='ready')return null;
-  if(state==='dialog')return introMode?'Press E, Space or click the box to read on':'Press E, Space or click the box to continue';
+  if(state==='dialog')return introMode?'Press E, Space or click anywhere to read on':'Press E, Space or click anywhere to continue';
   if(state==='zoom'||state==='card')return 'Press E or Esc to close';
   if(state==='cine')return 'Press Enter or click to skip to the contact page';
   if(state==='wait')return '';
@@ -661,7 +670,7 @@ function contextHint0(){
   const pg=(Z.pages||[]).find(q=>!save.pages.includes(q.id)&&Math.abs(q.x-P.x)<130);
   if(pg)return 'A journal page is close. Walk into it to collect it';
   return 'Walk with A and D or the arrow keys. Look for floating pages and things you can open';}
-const tk=s=>{if(!TOUCH||!s)return s;return s.replace('Press E, Space or click the box to read on','Tap the box to read on').replace('Press E, Space or click the box to continue','Tap the box to continue').replace('Press E or Esc to close','Tap CLOSE to leave').replace('Press Enter or click to skip to the contact page','Tap to skip to the contact page').replace('Press E to','Tap the E button to').replace('Walk with A and D or the arrow keys.','Walk with the arrow buttons.');};
+const tk=s=>{if(!TOUCH||!s)return s;return s.replace('Press E, Space or click anywhere to read on','Tap anywhere to read on').replace('Press E, Space or click anywhere to continue','Tap anywhere to continue').replace('Press E or Esc to close','Tap CLOSE to leave').replace('Press Enter or click to skip to the contact page','Tap to skip to the contact page').replace('Press E to','Tap the E button to').replace('Walk with A and D or the arrow keys.','Walk with the arrow buttons.');};
 const contextHint=()=>tk(contextHint0());
 let LEGEND=TOUCH?[['Ask Peanut','hint'],['Journal','journal'],['Map','map'],['Menu','menu']]:[['A / D or arrows: walk',null],['E: open',null],['C: ask Peanut','hint'],['J: journal','journal'],['M: map','map'],['Esc: menu','menu']];
 let LEGEND_RECTS=[];
@@ -681,8 +690,8 @@ function drawHUD(){
   if(state==='ready'){
     const a=.55+.45*Math.sin(T*5);
     ctx.fillStyle='rgba(43,29,18,.7)';ctx.fillRect(W/2-120,96,240,50);
-    TXT('MOVE TO START',W/2,118,16,'#fbe9c8','center',a);
-    TXT('Press A or D, or the arrow keys, to begin',W/2,136,10,'#ffd28a','center',undefined,1);}
+    TXT('CLICK ANYWHERE TO START',W/2,118,13,'#fbe9c8','center',a);
+    TXT('or press A or D, or the arrow keys',W/2,136,10,'#ffd28a','center',undefined,1);}
   if(banner&&state!=='ready'&&state!=='wait'){const a=banner.t<.5?banner.t/.5:banner.t>3?Math.max(0,(3.6-banner.t)/.6):1;
     ctx.save();ctx.globalAlpha=a;ctx.fillStyle='rgba(43,29,18,.7)';ctx.fillRect(W/2-120,28,240,34);ctx.restore();
     TXT(banner.title,W/2,45,13,'#fbe9c8','center',a);TXT(banner.sub,W/2,57,9,'#ec975e','center',a,1);}
